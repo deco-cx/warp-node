@@ -26,7 +26,7 @@ npm install @deco-cx/warp-node
 
 ## Requirements
 
-- Node.js 20+ (for Node.js environments)
+- Node.js 22+ (for Node.js environments - requires Promise.withResolvers support)
 - Works in Cloudflare Workers, Deno, and other JavaScript runtimes
 
 ## Server
@@ -154,7 +154,7 @@ const apiKey = "API_KEY";
 
 Warp Node is designed to work across multiple JavaScript runtimes:
 
-- **Node.js 20+**: Full support with native HTTP and WebSocket handling
+- **Node.js 22+**: Full support with native HTTP and WebSocket handling
 - **Cloudflare Workers**: Works with WebSocketPair API
 - **Deno**: Compatible with Deno's WebSocket implementation
 - **Bun**: Should work with Bun's WebSocket support
@@ -186,7 +186,7 @@ import {
   specified WebSocket URL.
 - **Domain Not Accessible**: Ensure that the domain name is correctly configured
   and pointing to the Warp server.
-- **Node.js Version**: Ensure you're using Node.js 20 or later for full
+- **Node.js Version**: Ensure you're using Node.js 22 or later for full
   compatibility.
 
 ## Contributing
