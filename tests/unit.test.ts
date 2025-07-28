@@ -53,9 +53,9 @@ describe("Unit Tests", () => {
       expect(typeof serializer.deserialize).toBe("function");
     });
 
-    it("should serialize and deserialize JSON", () => {
+    it("should serialize and deserialize JSON messages", () => {
       const serializer = jsonSerializer();
-      const data = { test: "value", number: 42 };
+      const data = { chunk: new Uint8Array([1, 2, 3]) };
 
       const serialized = serializer.serialize(data);
       expect(typeof serialized).toBe("string");
