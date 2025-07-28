@@ -14,12 +14,6 @@ export default defineConfig({
         singleFork: true,
       },
     },
-    // Skip tests on Node.js versions that don't support Promise.withResolvers
-    skipIf: () => {
-      const nodeVersion = process.version;
-      const majorVersion = parseInt(nodeVersion.slice(1).split('.')[0]);
-      return majorVersion < 22;
-    }
   },
   resolve: {
     alias: {
