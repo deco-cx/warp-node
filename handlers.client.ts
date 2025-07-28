@@ -6,7 +6,7 @@ import {
   makeChanStream,
   makeReadableStream,
   makeWebSocket,
-} from "./channel.ts";
+} from "./channel.js";
 import type {
   ClientMessage,
   ClientState,
@@ -19,8 +19,8 @@ import type {
   ServerMessage,
   ServerMessageHandler,
   WSMessage,
-} from "./messages.ts";
-import { arrayBufferSerializer } from "./serializers.ts";
+} from "./messages.js";
+import { arrayBufferSerializer } from "./serializers.js";
 
 /**
  * Handler for the 'registered' server message.
@@ -249,10 +249,10 @@ async function doFetch(
 
     const headers: Record<string, Array<string>> = {};
 
-    for (const [key, value] of response.headers.entries()) {
+    response.headers.forEach((value, key) => {
       headers[key] ??= [];
       headers[key].push(value);
-    }
+    });
 
     await clientCh.send({
       type: "response-start",

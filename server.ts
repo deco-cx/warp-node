@@ -1,13 +1,14 @@
-import { link, makeChan, makeChanStream, makeWebSocket } from "./channel.ts";
-import { CLIENT_VERSION_QUERY_STRING } from "./client.ts";
-import { handleClientMessage } from "./handlers.server.ts";
+import { createServer } from "http";
+import { link, makeChan, makeChanStream, makeWebSocket } from "./channel.js";
+import { CLIENT_VERSION_QUERY_STRING } from "./client.js";
+import { handleClientMessage } from "./handlers.server.js";
 import type {
   ClientMessage,
   ServerConnectionState,
   ServerMessage,
-} from "./messages.ts";
-import { upgradeWebSocket } from "./runtime.ts";
-import { dataViewerSerializer, jsonSerializer } from "./serializers.ts";
+} from "./messages.js";
+import { upgradeWebSocket } from "./runtime.js";
+import { dataViewerSerializer, jsonSerializer } from "./serializers.js";
 
 /**
  * Represents options for configuring the server.
@@ -32,14 +33,46 @@ export interface HandlerOptions {
 /**
  * Starts the Warp server.
  * @param {ServeOptions} [options] - Optional configurations for the server.
- * @returns {Deno.HttpServer<Deno.NetAddr>} An instance of Deno HTTP server.
+ * @returns {import('http').Server} An instance of Node.js HTTP server.
  */
-export const serve = (options: ServeOptions): Deno.HttpServer<Deno.NetAddr> => {
+export const serve = (options: ServeOptions): import('http').Server => {
   const port = options?.port ?? 8000;
-  return Deno.serve({
-    handler: serveHandler(options),
-    port,
+  const handler = serveHandler(options);
+  
+  const server = createServer(async (req, res) => {
+    try {
+      const response = await handler(new Request(`http://localhost:${port}${req.url}`, {
+        method: req.method,
+        headers: req.headers as HeadersInit,
+        body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req as any
+      }));
+      
+      res.statusCode = response.status;
+      response.headers.forEach((value, key) => {
+        res.setHeader(key, value);
+      });
+      
+      if (response.body) {
+        const reader = response.body.getReader();
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            res.write(value);
+          }
+        } finally {
+          reader.releaseLock();
+        }
+      }
+      res.end();
+    } catch (error) {
+      res.statusCode = 500;
+      res.end('Internal Server Error');
+    }
   });
+  
+  server.listen(port);
+  return server;
 };
 
 /**
@@ -128,10 +161,7 @@ export const serveHandler = (
         method: req.method,
         hasBody,
         url: (url.pathname + url.search),
-        headers: [...req.headers.entries()].reduce((acc, [key, value]) => {
-          acc[key] = value;
-          return acc;
-        }, {} as Record<string, string>),
+        headers: Object.fromEntries(req.headers as any),
       };
 
       // Create a writable stream using TransformStream

@@ -1,9 +1,9 @@
-import { makeWebSocket } from "./channel.ts";
-// deno-lint-ignore no-import-assertions
-import denoJSON from "./deno.json" assert { type: "json" };
-import { handleServerMessage } from "./handlers.client.ts";
-import type { ClientMessage, ClientState, ServerMessage } from "./messages.ts";
-import { dataViewerSerializer } from "./serializers.ts";
+import { request } from "undici";
+import { makeWebSocket } from "./channel.js";
+import pkg from "./package.json" with { type: "json" };
+import { handleServerMessage } from "./handlers.client.js";
+import type { ClientMessage, ClientState, ServerMessage } from "./messages.js";
+import { dataViewerSerializer } from "./serializers.js";
 
 export const CLIENT_VERSION_QUERY_STRING = "v";
 /**
@@ -44,14 +44,10 @@ export const connectMainThread = async (
 ): Promise<Connected> => {
   const closed = Promise.withResolvers<Error | undefined>();
   const registered = Promise.withResolvers<void>();
-  const client = typeof Deno.createHttpClient === "function"
-    ? Deno.createHttpClient({
-      allowHost: true,
-    })
-    : undefined;
+  const client = request; // Use undici.request for Node.js to allow host header override
 
   const socket = new WebSocket(
-    `${opts.server}/_connect?${CLIENT_VERSION_QUERY_STRING}=${denoJSON.version}`,
+    `${opts.server}/_connect?${CLIENT_VERSION_QUERY_STRING}=${pkg.version}`,
   );
   const ch = await makeWebSocket<ClientMessage, ServerMessage, ArrayBuffer>(
     socket,
@@ -100,19 +96,36 @@ export const connectMainThread = async (
 export const connectSW = (opts: ConnectOptions): Promise<Connected> => {
   const closed = Promise.withResolvers<Error | undefined>();
   const registered = Promise.withResolvers<void>();
-  const worker = new Worker(import.meta.url, {
-    type: "module",
-    deno: { permissions: "inherit" },
-  });
-  worker.addEventListener("message", (message) => {
-    if (message.data === "closed") {
-      closed.resolve(undefined);
-    }
-    if (message.data === "registered") {
-      registered.resolve();
-    }
-  });
-  worker.postMessage(opts);
+  
+  // For Node.js, use worker_threads instead of Web Workers
+  if (typeof process !== "undefined" && process.versions?.node) {
+    import("worker_threads").then(({ Worker }) => {
+      const worker = new Worker(import.meta.url);
+      worker.on("message", (message) => {
+        if (message === "closed") {
+          closed.resolve(undefined);
+        }
+        if (message === "registered") {
+          registered.resolve();
+        }
+      });
+      worker.postMessage(opts);
+    });
+  } else {
+    // For other environments (browsers, Deno), use Web Workers
+    const worker = new Worker(import.meta.url, {
+      type: "module",
+    });
+    worker.addEventListener("message", (message) => {
+      if (message.data === "closed") {
+        closed.resolve(undefined);
+      }
+      if (message.data === "registered") {
+        registered.resolve();
+      }
+    });
+    worker.postMessage(opts);
+  }
 
   return Promise.resolve({
     closed: closed.promise,
@@ -120,14 +133,29 @@ export const connectSW = (opts: ConnectOptions): Promise<Connected> => {
   });
 };
 
-// @ts-ignore: "trust-me"
-self.onmessage = async (evt) => {
-  const { closed, registered } = await connectMainThread(evt.data);
+// Worker message handler - works for both Web Workers and worker_threads
+if (typeof process !== "undefined" && process.versions?.node) {
+  // Node.js worker_threads
+  import("worker_threads").then(({ parentPort }) => {
+    if (parentPort) {
+      parentPort.on("message", async (evt) => {
+        const { closed, registered } = await connectMainThread(evt);
+        closed.then(() => parentPort!.postMessage("closed"));
+        registered.then(() => parentPort!.postMessage("registered"));
+      });
+    }
+  });
+} else {
+  // Web Workers (browsers, Deno)
   // @ts-ignore: "trust-me"
-  closed.then(() => self.postMessage("closed"));
-  // @ts-ignore: "trust-me"
-  registered.then(() => self.postMessage("registered"));
-};
+  self.onmessage = async (evt) => {
+    const { closed, registered } = await connectMainThread(evt.data);
+    // @ts-ignore: "trust-me"
+    closed.then(() => self.postMessage("closed"));
+    // @ts-ignore: "trust-me"
+    registered.then(() => self.postMessage("registered"));
+  };
+}
 
 /**
  * Establishes a WebSocket connection with the server.

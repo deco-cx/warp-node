@@ -1,4 +1,4 @@
-import type { Channel, DuplexChannel } from "./channel.ts";
+import type { Channel, DuplexChannel } from "./channel.js";
 
 export interface RequestObject {
   id: string;
@@ -106,7 +106,7 @@ export interface ClientState {
   wsSockets: Record<string, WebSocket>;
   live: boolean;
   localAddr: string;
-  client?: Deno.HttpClient;
+  client?: typeof import("undici").request; // Use undici.request for Node.js
 }
 
 export interface ClientHostController {

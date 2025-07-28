@@ -1,5 +1,5 @@
-import { Queue } from "./queue.ts";
-import { jsonSerializer } from "./serializers.ts";
+import { Queue } from "./queue.js";
+import { jsonSerializer } from "./serializers.js";
 
 export interface Channel<T> {
   closed: Promise<void>;

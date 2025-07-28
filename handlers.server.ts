@@ -1,4 +1,4 @@
-import { makeReadableStream, makeWebSocket } from "./channel.ts";
+import { makeReadableStream, makeWebSocket } from "./channel.js";
 import type {
   ClientMessage,
   ClientMessageHandler,
@@ -8,9 +8,9 @@ import type {
   ResponseStartMessage,
   WSConnectionClosed,
   WSMessage,
-} from "./messages.ts";
-import { upgradeWebSocket } from "./runtime.ts";
-import { arrayBufferSerializer } from "./serializers.ts";
+} from "./messages.js";
+import { upgradeWebSocket } from "./runtime.js";
+import { arrayBufferSerializer } from "./serializers.js";
 
 /**
  * List of status codes that represent null bodies in responses.

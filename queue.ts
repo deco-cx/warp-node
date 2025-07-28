@@ -2,7 +2,7 @@
  * Its necessary since JSR requires the use of JSR deps.
  * source from: https://github.com/lambdalisue/deno-async/blob/c86ef00a3056b2436b5e90f01bf52c1cbb83b1c8/queue.ts
  */
-import { Notify, type WaitOptions } from "./notify.ts";
+import { Notify, type WaitOptions } from "./notify.js";
 
 /**
  * A queue implementation that allows for adding and removing elements, with optional waiting when

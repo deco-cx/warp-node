@@ -1,19 +1,62 @@
 {
+  "name": "@deco-cx/warp-node",
+  "version": "0.3.8",
+  "description": "WebSocket tunneling library for Node.js and other runtimes",
   "type": "module",
+  "main": "dist/mod.js",
+  "types": "dist/mod.d.ts",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "websocket",
+    "tunnel",
+    "proxy",
+    "warp",
+    "cloudflare",
+    "nodejs"
+  ],
+  "author": "Deco",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deco-cx/warp-node.git"
+  },
+  "homepage": "https://github.com/deco-cx/warp-node",
+  "bugs": {
+    "url": "https://github.com/deco-cx/warp-node/issues"
+  },
+  "dependencies": {
+    "ws": "^8.18.0",
+    "undici": "^6.21.0"
+  },
   "devDependencies": {
     "@types/node": "^22.10.1",
+    "@types/ws": "^8.5.13",
     "@cloudflare/workers-types": "^4.20241127.0",
     "typescript": "^5.5.2",
     "wrangler": "^3.91.0"
   },
   "scripts": {
-    "test": "rm kv || true && deno test -A --env-file=.test.vars --trace-leaks .",
-    "test-prod": "deno test -A --env-file=.dev.vars .",
+    "build": "tsc",
     "dev": "wrangler dev --port 8000",
-    "build": "wrangler deploy --dry-run --outdir=dist",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/mod.d.ts",
+      "import": "./dist/mod.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
