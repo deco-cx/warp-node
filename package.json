@@ -1,6 +1,6 @@
 {
   "name": "@deco-cx/warp-node",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "WebSocket tunneling library for Node.js and other runtimes",
   "type": "module",
   "main": "dist/mod.js",
