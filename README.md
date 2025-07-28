@@ -1,12 +1,13 @@
-[![JSR](https://jsr.io/badges/@deco/warp)](https://jsr.io/@deco/warp)
-[![JSR Score](https://jsr.io/badges/@deco/warp/score)](https://jsr.io/@deco/warp)
+[![NPM Version](https://img.shields.io/npm/v/@deco-cx/warp-node)](https://www.npmjs.com/package/@deco-cx/warp-node)
+[![NPM Downloads](https://img.shields.io/npm/dm/@deco-cx/warp-node)](https://www.npmjs.com/package/@deco-cx/warp-node)
+[![GitHub License](https://img.shields.io/github/license/deco-cx/warp-node)](https://github.com/deco-cx/warp-node/blob/main/LICENSE)
 
-# Warp
+# Warp Node
 
-**Warp** is a simple tool that allows your locally running HTTP(s) servers to
-have a public URL, serving as an easy-to-self-host alternative to services like
-`ngrok`. Warp is implemented in Deno with the goal of providing flexibility and
-minimal dependencies.
+**Warp Node** is a simple tool that allows your locally running HTTP(s) servers
+to have a public URL, serving as an easy-to-self-host alternative to services
+like `ngrok`. Warp Node is implemented for Node.js and other JavaScript runtimes
+with the goal of providing flexibility and minimal dependencies.
 
 The project has two main components:
 
@@ -16,6 +17,17 @@ The project has two main components:
   or non-public network.
 
 <img width="1390" alt="image" src="https://github.com/deco-cx/warp/assets/5839364/914ab723-02cf-4a1a-9799-72671ffa5974">
+
+## Installation
+
+```bash
+npm install @deco-cx/warp-node
+```
+
+## Requirements
+
+- Node.js 20+ (for Node.js environments)
+- Works in Cloudflare Workers, Deno, and other JavaScript runtimes
 
 ## Server
 
@@ -32,12 +44,13 @@ call it with the appropriate configuration.
 #### Example
 
 ```typescript
-import { serve } from "jsr:@deco/warp";
+import { serve } from "@deco-cx/warp-node";
 
 const port = 8080; // The port where the Warp server will listen
 const apiKeys = ["YOUR_API_KEY1", "YOUR_API_KEY2"]; // Array of API keys for authentication
 
-serve({ port, apiKeys });
+const server = serve({ port, apiKeys });
+console.log(`Warp server listening on port ${port}`);
 ```
 
 #### Parameters
@@ -58,7 +71,7 @@ Warp package and call it with the appropriate configuration.
 #### Example
 
 ```typescript
-import { connect } from "jsr:@deco/warp";
+import { connect } from "@deco-cx/warp-node";
 
 const port = 3000; // The local port you want to expose
 const domain = "www.your.domain.com"; // The domain name for your service
@@ -101,18 +114,19 @@ Here’s a complete example of setting up a Warp server and client:
 ### Server
 
 ```typescript
-import { serve } from "jsr:@deco/warp";
+import { serve } from "@deco-cx/warp-node";
 
 const port = 8080;
 const apiKeys = ["YOUR_API_KEY1", "YOUR_API_KEY2"];
 
-serve({ port, apiKeys });
+const server = serve({ port, apiKeys });
+console.log(`Warp server listening on port ${port}`);
 ```
 
 ### Client
 
 ```typescript
-import { connect } from "jsr:@deco/warp";
+import { connect } from "@deco-cx/warp-node";
 
 const port = 3000;
 const domain = "www.your.domain.com";
@@ -136,6 +150,32 @@ const apiKey = "API_KEY";
 })();
 ```
 
+## Runtime Compatibility
+
+Warp Node is designed to work across multiple JavaScript runtimes:
+
+- **Node.js 20+**: Full support with native HTTP and WebSocket handling
+- **Cloudflare Workers**: Works with WebSocketPair API
+- **Deno**: Compatible with Deno's WebSocket implementation
+- **Bun**: Should work with Bun's WebSocket support
+
+The library automatically detects the runtime environment and uses the
+appropriate APIs.
+
+## TypeScript Support
+
+This package includes full TypeScript definitions. No additional `@types`
+packages are needed.
+
+```typescript
+import {
+  connect,
+  type ConnectOptions,
+  type HandlerOptions,
+  serve,
+} from "@deco-cx/warp-node";
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -146,3 +186,14 @@ const apiKey = "API_KEY";
   specified WebSocket URL.
 - **Domain Not Accessible**: Ensure that the domain name is correctly configured
   and pointing to the Warp server.
+- **Node.js Version**: Ensure you're using Node.js 20 or later for full
+  compatibility.
+
+## Contributing
+
+This project is open source. Feel free to contribute by submitting issues or
+pull requests.
+
+## License
+
+MIT License - see [LICENSE](./LICENSE) file for details.

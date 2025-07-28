@@ -3,11 +3,11 @@ name: Publish to NPM
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version to publish (leave empty to use package.json version)'
+        description: "Version to publish (leave empty to use package.json version)"
         required: false
         type: string
 
@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: write # Required for creating releases
       id-token: write # Required for npm provenance
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,9 +25,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -55,7 +55,7 @@ jobs:
           name: Release ${{ github.ref_name }}
           body: |
             Release ${{ github.ref_name }}
-            
+
             Published to NPM as `@deco-cx/warp-node@${{ github.ref_name }}`
           draft: false
           prerelease: false

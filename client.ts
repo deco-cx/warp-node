@@ -96,7 +96,7 @@ export const connectMainThread = async (
 export const connectSW = (opts: ConnectOptions): Promise<Connected> => {
   const closed = Promise.withResolvers<Error | undefined>();
   const registered = Promise.withResolvers<void>();
-  
+
   // For Node.js, use worker_threads instead of Web Workers
   if (typeof process !== "undefined" && process.versions?.node) {
     import("worker_threads").then(({ Worker }) => {

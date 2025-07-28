@@ -67,32 +67,32 @@ export const upgradeWebSocket = (
   req: Request,
 ): { socket: WebSocket; response: Response } => {
   const runtimeKey = getRuntimeKey();
-  
+
   if (runtimeKey === "deno") {
     // @ts-ignore: Deno global not available in Node.js
     return Deno.upgradeWebSocket(req);
   }
-  
+
   if (runtimeKey === "node") {
     // For Node.js, we need to handle WebSocket upgrade differently
     // This is a simplified version - in practice, you'd need to properly handle the upgrade
     const wss = new WebSocketServer({ noServer: true });
-    
+
     // Create a mock WebSocket-like object for compatibility
     const socket = new EventTarget() as WebSocket;
-    
+
     return {
       socket,
       response: new Response(null, {
         status: 101,
         headers: {
-          'Upgrade': 'websocket',
-          'Connection': 'Upgrade',
+          "Upgrade": "websocket",
+          "Connection": "Upgrade",
         },
       }),
     };
   }
-  
+
   // For Cloudflare Workers and other runtimes
   // @ts-ignore: WebSocketPair is not part of the global scope
   const webSocketPair = new WebSocketPair();

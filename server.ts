@@ -35,23 +35,27 @@ export interface HandlerOptions {
  * @param {ServeOptions} [options] - Optional configurations for the server.
  * @returns {import('http').Server} An instance of Node.js HTTP server.
  */
-export const serve = (options: ServeOptions): import('http').Server => {
+export const serve = (options: ServeOptions): import("http").Server => {
   const port = options?.port ?? 8000;
   const handler = serveHandler(options);
-  
+
   const server = createServer(async (req, res) => {
     try {
-      const response = await handler(new Request(`http://localhost:${port}${req.url}`, {
-        method: req.method,
-        headers: req.headers as HeadersInit,
-        body: req.method === 'GET' || req.method === 'HEAD' ? undefined : req as any
-      }));
-      
+      const response = await handler(
+        new Request(`http://localhost:${port}${req.url}`, {
+          method: req.method,
+          headers: req.headers as HeadersInit,
+          body: req.method === "GET" || req.method === "HEAD"
+            ? undefined
+            : req as any,
+        }),
+      );
+
       res.statusCode = response.status;
       response.headers.forEach((value, key) => {
         res.setHeader(key, value);
       });
-      
+
       if (response.body) {
         const reader = response.body.getReader();
         try {
@@ -67,10 +71,10 @@ export const serve = (options: ServeOptions): import('http').Server => {
       res.end();
     } catch (error) {
       res.statusCode = 500;
-      res.end('Internal Server Error');
+      res.end("Internal Server Error");
     }
   });
-  
+
   server.listen(port);
   return server;
 };
