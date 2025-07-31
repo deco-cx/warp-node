@@ -140,7 +140,9 @@ const onWsClosed: ServerMessageHandler<RegisteredMessage> = (
 ) => {
   const socket = state.wsSockets[message.id];
   delete state.wsSockets[message.id];
-  socket?.close();
+  if (socket && socket.readyState !== WebSocket.CLOSED) {
+    socket.close();
+  }
 };
 
 /**
@@ -206,7 +208,11 @@ async function handleWebSocket(
         }).catch(ignoreIfClosed);
         throw error;
       } finally {
+        const socket = state.wsSockets[message.id];
         delete state.wsSockets[message.id];
+        if (socket && socket.readyState !== WebSocket.CLOSED) {
+          socket.close();
+        }
       }
     })();
   } catch (err) {

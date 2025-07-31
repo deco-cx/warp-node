@@ -34,7 +34,7 @@ export const ifClosedChannel =
     throw err;
   };
 
-export const ignoreIfClosed = ifClosedChannel(() => {});
+export const ignoreIfClosed = ifClosedChannel(() => { });
 export const makeChan = <T>(capacity = 0): Channel<T> => {
   let currentCapacity = capacity;
   const queue: Queue<{ value: T; resolve: () => void }> = new Queue();
@@ -119,10 +119,10 @@ export const makeWebSocket = <
   TSend,
   TReceive,
   TMessageFormat extends string | ArrayBufferLike | ArrayBufferView | Blob =
-    | string
-    | ArrayBufferLike
-    | ArrayBufferView
-    | Blob,
+  | string
+  | ArrayBufferLike
+  | ArrayBufferView
+  | Blob,
 >(
   socket: WebSocket,
   _serializer?: MessageSerializer<TSend, TReceive, TMessageFormat>,
@@ -135,13 +135,20 @@ export const makeWebSocket = <
     DuplexChannel<Message<TSend>, Message<TReceive>>
   >();
   socket.binaryType = serializer.binaryType ?? "blob";
+  let isClosing = false;
   socket.onclose = () => {
-    sendChan.close();
-    recvChan.close();
+    if (!isClosing) {
+      isClosing = true;
+      sendChan.close();
+      recvChan.close();
+    }
   };
   socket.onerror = (err) => {
-    socket.close();
-    ch.reject(err);
+    if (!isClosing) {
+      isClosing = true;
+      socket.close();
+      ch.reject(err);
+    }
   };
   socket.onmessage = async (msg) => {
     if (recvChan.signal.aborted) {
