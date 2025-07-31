@@ -149,16 +149,16 @@ const onWsClosed: ServerMessageHandler<RegisteredMessage> = (
  */
 // deno-lint-ignore no-explicit-any
 const handlersByType: Record<ServerMessage["type"], ServerMessageHandler<any>> =
-  {
-    registered,
-    error,
-    "request-aborted": onRequestAborted,
-    "request-start": onRequestStart,
-    "request-data": onRequestData,
-    "request-end": onRequestDataEnd,
-    "ws-closed": onWsClosed,
-    "ws-message": onWsMessage,
-  };
+{
+  registered,
+  error,
+  "request-aborted": onRequestAborted,
+  "request-start": onRequestStart,
+  "request-data": onRequestData,
+  "request-end": onRequestDataEnd,
+  "ws-closed": onWsClosed,
+  "ws-message": onWsMessage,
+};
 
 /**
  * Handles WebSocket connections.
@@ -243,6 +243,7 @@ async function doFetch(
           ? { ...request.headers, host: request.domain }
           : request.headers,
         body: request.body,
+        ...(request.body ? { duplex: "half" } : {}),
         signal,
       },
     );
