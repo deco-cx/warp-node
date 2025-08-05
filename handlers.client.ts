@@ -51,6 +51,7 @@ const onRequestStart: ServerMessageHandler<RequestStartMessage> = async (
     await handleWebSocket(message, state);
     return;
   }
+  console.log(`[req-start] ${message.method} ${message.url} hasBody: ${message.hasBody}`);
   const abortCtrl = new AbortController();
   state.requests[message.id] = { abortCtrl };
   if (!message.hasBody) {
@@ -69,6 +70,11 @@ const onRequestStart: ServerMessageHandler<RequestStartMessage> = async (
       state.ch.out,
       abortCtrl.signal,
     ).catch(ignoreIfClosed).finally(() => {
+      // Ensure the body channel is closed when the request is cleaned up
+      const req = state.requests[message.id];
+      if (req?.body) {
+        req.body.close();
+      }
       delete state.requests[message.id];
     });
   }
@@ -88,6 +94,7 @@ const onRequestData: ServerMessageHandler<RequestDataMessage> = async (
     console.info("[req-data] req not found", message.id);
     return;
   }
+  console.log(`[req-data] ${message.id} chunk size: ${message.chunk.length}`);
   // @ts-ignore: bodyData is a Uint8Array
   await reqBody.send?.(message.chunk);
 };
@@ -113,10 +120,12 @@ const onRequestDataEnd: ServerMessageHandler<RequestDataEndMessage> = (
   state,
   message,
 ) => {
+  console.log(`[req-data-end] ${message.id}`);
   const reqBody = state.requests[message.id]?.body;
   if (!reqBody) {
     return;
   }
+  // Close the body channel to signal end of request data
   reqBody.close();
 };
 
@@ -239,20 +248,29 @@ async function doFetch(
   // Read from the stream
   const signal = link(clientCh.signal, reqSignal);
   try {
+    // For Node.js with undici, we need to handle the body differently
+    const fetchOptions: RequestInit = {
+      ...state.client ? { client: state.client } : {},
+      redirect: "manual",
+      method: request.method,
+      headers: state.client
+        ? { ...request.headers, host: request.domain }
+        : request.headers,
+      signal,
+    };
+
+    // Only add body and duplex if we actually have a body
+    if (request.body) {
+      fetchOptions.body = request.body;
+      // Remove duplex option for Node.js/undici compatibility
+      // fetchOptions.duplex = "half";
+    }
+
     const response = await fetch(
       new URL(request.url, state.localAddr),
-      {
-        ...state.client ? { client: state.client } : {},
-        redirect: "manual",
-        method: request.method,
-        headers: state.client
-          ? { ...request.headers, host: request.domain }
-          : request.headers,
-        body: request.body,
-        ...(request.body ? { duplex: "half" } : {}),
-        signal,
-      },
+      fetchOptions,
     );
+    console.log("response", response);
 
     const headers: Record<string, Array<string>> = {};
 
@@ -289,6 +307,7 @@ async function doFetch(
     if (signal.aborted) {
       return;
     }
+    console.error(`[doFetch] Error for request ${request.id}:`, err);
     throw err;
   }
 }

@@ -179,14 +179,19 @@ export const makeReadableStream = (
 ): ReadableStream<Uint8Array> => {
   return new ReadableStream({
     async start(controller) {
-      for await (const content of ch.recv(signal)) {
-        controller.enqueue(content);
+      try {
+        for await (const content of ch.recv(signal)) {
+          controller.enqueue(content);
+        }
+        controller.close();
+      } catch (error) {
+        // Handle cancellation gracefully
+        if (signal?.aborted || error instanceof ClosedChannelError) {
+          controller.close();
+        } else {
+          controller.error(error);
+        }
       }
-      // Uncomment if necessary. this will send a signal to the controller
-      // if (signal?.aborted) {
-      //   controller.error(new Error("aborted"));
-      // }
-      controller.close();
     },
     cancel() {
       ch.close();
@@ -201,15 +206,23 @@ export const makeChanStream = (
   // Consume the transformed stream to trigger the pipeline
   const reader = stream.getReader();
   const processStream = async () => {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      await chan.send(value);
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        await chan.send(value);
+      }
+      chan.close();
+    } catch (err) {
+      // Handle errors gracefully, especially for Node.js/undici
+      if (!chan.signal.aborted) {
+        console.error("error processing stream", err);
+        chan.close();
+      }
     }
-    chan.close();
   };
   processStream().catch((err) => {
-    if (!err?.target?.aborted) {
+    if (!chan.signal.aborted) {
       console.error("error processing stream", err);
     }
   });
