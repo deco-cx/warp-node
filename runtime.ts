@@ -4,6 +4,9 @@
  * Adapter Helper for Hono.
  */
 import { WebSocketServer } from "ws";
+import process from "node:process";
+
+const SHOW_DEBUG = process.env.DEBUG === "1";
 
 export type Runtime =
   | "node"
@@ -67,6 +70,10 @@ export const upgradeWebSocket = (
   req: Request,
 ): { socket: WebSocket; response: Response } => {
   const runtimeKey = getRuntimeKey();
+
+  if (SHOW_DEBUG) {
+    console.log("[upgradeWebSocket] detected runtime:", runtimeKey);
+  }
 
   if (runtimeKey === "deno") {
     // @ts-ignore: Deno global not available in Node.js
