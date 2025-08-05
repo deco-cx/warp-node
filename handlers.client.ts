@@ -279,6 +279,7 @@ async function doFetch(
       headers[key].push(value);
     });
 
+    console.log(`[doFetch] Sending response-start for ${request.id}, status: ${response.status}`);
     await clientCh.send({
       type: "response-start",
       id: request.id,
@@ -288,17 +289,35 @@ async function doFetch(
     });
 
     const body = response?.body;
-    const stream = body ? makeChanStream(body) : undefined;
-    for await (const chunk of stream?.recv(signal) ?? []) {
-      await clientCh.send({
-        type: "data",
-        id: request.id,
-        chunk,
-      });
+    console.log(`[doFetch] Response body for ${request.id}:`, body ? 'present' : 'null');
+    
+    if (body) {
+      try {
+        const stream = makeChanStream(body);
+        console.log(`[doFetch] Reading response stream for ${request.id}`);
+        for await (const chunk of stream.recv(signal)) {
+          console.log(`[doFetch] Sending chunk for ${request.id}, size: ${chunk.length}`);
+          await clientCh.send({
+            type: "data",
+            id: request.id,
+            chunk,
+          });
+        }
+        console.log(`[doFetch] Finished reading response stream for ${request.id}`);
+      } catch (streamError) {
+        console.error(`[doFetch] Stream error for ${request.id}:`, streamError);
+        if (!signal.aborted) {
+          throw streamError;
+        }
+      }
     }
+    
     if (signal.aborted) {
+      console.log(`[doFetch] Request ${request.id} was aborted`);
       return;
     }
+    
+    console.log(`[doFetch] Sending data-end for ${request.id}`);
     await clientCh.send({
       type: "data-end",
       id: request.id,

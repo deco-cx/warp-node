@@ -207,21 +207,28 @@ export const makeChanStream = (
   const reader = stream.getReader();
   const processStream = async () => {
     try {
+      console.log("[makeChanStream] Starting to process stream");
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          console.log("[makeChanStream] Stream done");
+          break;
+        }
+        console.log(`[makeChanStream] Sending chunk of size ${value.length}`);
         await chan.send(value);
       }
+      console.log("[makeChanStream] Closing channel");
       chan.close();
     } catch (err) {
       // Handle errors gracefully, especially for Node.js/undici
+      console.error("[makeChanStream] Error processing stream:", err);
       if (!chan.signal.aborted) {
-        console.error("error processing stream", err);
         chan.close();
       }
     }
   };
   processStream().catch((err) => {
+    console.error("[makeChanStream] Unhandled error in processStream:", err);
     if (!chan.signal.aborted) {
       console.error("error processing stream", err);
     }
