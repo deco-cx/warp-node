@@ -21,6 +21,22 @@ import type {
   WSMessage,
 } from "./messages.js";
 import { arrayBufferSerializer } from "./serializers.js";
+import { request as undiciRequest } from "undici";
+import { Readable } from 'stream';
+
+function nodeReadableToWebReadable(nodeStream: Readable): ReadableStream<Uint8Array> {
+  return new ReadableStream({
+    start(controller) {
+      nodeStream.on('data', chunk => controller.enqueue(chunk));
+      nodeStream.on('end', () => controller.close());
+      nodeStream.on('error', err => controller.error(err));
+    },
+    cancel() {
+      nodeStream.destroy();
+    }
+  });
+}
+
 
 /**
  * Handler for the 'registered' server message.
@@ -239,16 +255,12 @@ async function doFetch(
   // Read from the stream
   const signal = link(clientCh.signal, reqSignal);
   try {
-    const response = await fetch(
+    const response = await undiciRequest(
       new URL(request.url, state.localAddr),
       {
-        ...state.client ? { client: state.client } : {},
-        redirect: "manual",
-        method: request.method,
-        headers: state.client
-          ? { ...request.headers, host: request.domain }
-          : request.headers,
-        body: request.body,
+        method: request.method as any,
+        headers: { ...request.headers, host: request.domain },
+        body: request.body as any,
         ...(request.body ? { duplex: "half" } : {}),
         signal,
       },
@@ -256,21 +268,24 @@ async function doFetch(
 
     const headers: Record<string, Array<string>> = {};
 
-    response.headers.forEach((value, key) => {
-      headers[key] ??= [];
-      headers[key].push(value);
-    });
+    for (const [key, value] of Object.entries(response.headers)) {
+      if (typeof value === 'string') {
+        headers[key] = [value];
+      } else if (Array.isArray(value)) {
+        headers[key] = value;
+      }
+    }
 
     await clientCh.send({
       type: "response-start",
       id: request.id,
-      statusCode: response.status,
-      statusMessage: response.statusText,
+      statusCode: response.statusCode,
+      statusMessage: "OK",
       headers,
     });
 
     const body = response?.body;
-    const stream = body ? makeChanStream(body) : undefined;
+    const stream = body ? makeChanStream(nodeReadableToWebReadable(body)) : undefined;
     for await (const chunk of stream?.recv(signal) ?? []) {
       await clientCh.send({
         type: "data",

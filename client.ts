@@ -1,4 +1,3 @@
-import { request } from "undici";
 import { makeWebSocket } from "./channel.js";
 import pkg from "./package.json" with { type: "json" };
 import { handleServerMessage } from "./handlers.client.js";
@@ -44,7 +43,6 @@ export const connectMainThread = async (
 ): Promise<Connected> => {
   const closed = Promise.withResolvers<Error | undefined>();
   const registered = Promise.withResolvers<void>();
-  const client = request; // Use undici.request for Node.js to allow host header override
 
   const socket = new WebSocket(
     `${opts.server}/_connect?${CLIENT_VERSION_QUERY_STRING}=${pkg.version}`,
@@ -64,7 +62,6 @@ export const connectMainThread = async (
   (async () => {
     let reason: undefined | Error;
     const state: ClientState = {
-      client,
       localAddr: opts.localAddr,
       live: false,
       requests: {},

@@ -106,7 +106,6 @@ export interface ClientState {
   wsSockets: Record<string, WebSocket>;
   live: boolean;
   localAddr: string;
-  client?: typeof import("undici").request; // Use undici.request for Node.js
 }
 
 export interface ClientHostController {
