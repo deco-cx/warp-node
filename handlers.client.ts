@@ -261,12 +261,13 @@ async function doFetch(
         method: request.method as any,
         headers: { ...request.headers, host: request.domain },
         body: request.body as any,
-        ...(request.body ? { duplex: "half" } : {}),
         signal,
       },
     );
 
     const headers: Record<string, Array<string>> = {};
+
+    console.log("Response headers", JSON.stringify(Object.entries(response.headers), null, 2));
 
     for (const [key, value] of Object.entries(response.headers)) {
       if (typeof value === 'string') {
@@ -275,6 +276,8 @@ async function doFetch(
         headers[key] = value;
       }
     }
+
+    console.log("response-start headers", JSON.stringify(headers, null, 2));
 
     await clientCh.send({
       type: "response-start",
