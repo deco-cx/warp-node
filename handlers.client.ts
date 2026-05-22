@@ -171,7 +171,12 @@ async function handleWebSocket(
   message: RequestStartMessage,
   state: ClientState,
 ) {
-  const ws = new WebSocket(new URL(message.url, state.localAddr));
+  const target = new URL(message.url, state.localAddr);
+  // Coerce http(s): -> ws(s): so spec-strict runtimes (e.g. Bun) accept it.
+  // Node's undici silently rewrites the scheme, but Bun keeps `http:` and
+  // the handshake fails immediately, breaking HMR (Vite/Next) through the tunnel.
+  target.protocol = target.protocol === "https:" ? "wss:" : "ws:";
+  const ws = new WebSocket(target);
   try {
     const wsCh = await makeWebSocket<ArrayBuffer, ArrayBuffer, ArrayBuffer>(
       ws,
